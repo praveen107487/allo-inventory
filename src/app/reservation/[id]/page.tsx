@@ -1,48 +1,52 @@
 "use client"
 
-import { Reservation } from "@/types"
-import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { useParams, useRouter } from "next/navigation"
 
 export default function ReservationPage() {
   const params = useParams()
   const router = useRouter()
 
   const [reservation, setReservation] =
-    useState<Reservation | null>(null)
+    useState<any>(null)
 
-  const [timeLeft, setTimeLeft] = useState("")
-  const [message, setMessage] = useState("")
   const [loading, setLoading] = useState(true)
 
+  const [message, setMessage] = useState("")
+
+  const [timeLeft, setTimeLeft] =
+    useState("")
+
   useEffect(() => {
-    fetchReservation()
-  }, [])
+    if (params?.id) {
+      fetchReservation()
+    }
+  }, [params])
 
   useEffect(() => {
     if (!reservation) return
 
-    const timer = setInterval(() => {
+    const interval = setInterval(() => {
       const now = new Date().getTime()
 
       const expiry = new Date(
         reservation.expiresAt
       ).getTime()
 
-      const distance = expiry - now
+      const difference = expiry - now
 
-      if (distance <= 0) {
+      if (difference <= 0) {
         setTimeLeft("Expired")
-        clearInterval(timer)
+        clearInterval(interval)
         return
       }
 
       const minutes = Math.floor(
-        distance / (1000 * 60)
+        difference / (1000 * 60)
       )
 
       const seconds = Math.floor(
-        (distance % (1000 * 60)) / 1000
+        (difference % (1000 * 60)) / 1000
       )
 
       setTimeLeft(
@@ -50,7 +54,7 @@ export default function ReservationPage() {
       )
     }, 1000)
 
-    return () => clearInterval(timer)
+    return () => clearInterval(interval)
   }, [reservation])
 
   async function fetchReservation() {
@@ -67,7 +71,7 @@ export default function ReservationPage() {
       }
 
       setReservation(data)
-    } catch (err) {
+    } catch (error) {
       setMessage("Failed to load reservation")
     } finally {
       setLoading(false)
@@ -90,7 +94,7 @@ export default function ReservationPage() {
       if (res.ok) {
         fetchReservation()
       }
-    } catch (err) {
+    } catch (error) {
       setMessage("Something went wrong")
     }
   }
@@ -111,14 +115,14 @@ export default function ReservationPage() {
       if (res.ok) {
         fetchReservation()
       }
-    } catch (err) {
+    } catch (error) {
       setMessage("Something went wrong")
     }
   }
 
   if (loading) {
     return (
-      <div className="p-10">
+      <div className="min-h-screen flex items-center justify-center text-lg font-semibold text-gray-700">
         Loading...
       </div>
     )
@@ -126,72 +130,104 @@ export default function ReservationPage() {
 
   if (!reservation) {
     return (
-      <div className="p-10">
+      <div className="min-h-screen flex items-center justify-center text-lg font-semibold text-red-600">
         {message}
       </div>
     )
   }
 
   return (
-    <div className="p-10">
-      <button
-        onClick={() => router.push("/")}
-        className="mb-5 border px-4 py-2 rounded"
-      >
-        Back
-      </button>
+    <main className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
+      <div className="max-w-2xl mx-auto px-6 py-10">
+        <button
+          onClick={() => router.push("/")}
+          className="mb-6 border border-gray-300 px-4 py-2 rounded-lg bg-white text-gray-700 font-medium shadow-sm hover:bg-gray-100 transition"
+        >
+          Back
+        </button>
 
-      <div className="border p-6 rounded max-w-xl">
-        <h1 className="text-3xl font-bold mb-5">
-          Reservation
-        </h1>
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-8">
+          <h1 className="text-3xl font-extrabold text-indigo-700 mb-6">
+            Reservation Details
+          </h1>
 
-        {message && (
-          <div className="bg-blue-200 p-3 rounded mb-4">
-            {message}
+          {message && (
+            <div className="bg-blue-100 text-blue-800 px-4 py-3 rounded-lg mb-5 font-medium">
+              {message}
+            </div>
+          )}
+
+          <div className="space-y-5">
+            <div>
+              <p className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                Product
+              </p>
+
+              <p className="text-lg font-semibold text-gray-900">
+                {reservation.product.name}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                Warehouse
+              </p>
+
+              <p className="text-lg font-semibold text-gray-900">
+                {reservation.warehouse.name}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                Quantity
+              </p>
+
+              <p className="text-lg font-semibold text-gray-900">
+                {reservation.quantity}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                Status
+              </p>
+
+              <p className="text-lg font-semibold capitalize text-green-700">
+                {reservation.status}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                Expires In
+              </p>
+
+              <p className="text-xl font-bold text-red-700">
+                {timeLeft}
+              </p>
+            </div>
           </div>
-        )}
 
-        <p>
-          Product:{" "}
-          {reservation.product.name}
-        </p>
+          {reservation.status === "pending" && (
+            <div className="flex gap-4 mt-8">
+              <button
+                onClick={confirmReservation}
+                className="flex-1 bg-green-600 text-white py-3 rounded-lg font-semibold shadow hover:bg-green-700 transition"
+              >
+                Confirm Purchase
+              </button>
 
-        <p className="mt-2">
-          Warehouse:{" "}
-          {reservation.warehouse.name}
-        </p>
-
-        <p className="mt-2">
-          Quantity: {reservation.quantity}
-        </p>
-
-        <p className="mt-2">
-          Status: {reservation.status}
-        </p>
-
-        <p className="mt-2 text-red-600 font-semibold">
-          Expires In: {timeLeft}
-        </p>
-
-        {reservation.status === "pending" && (
-          <div className="flex gap-3 mt-6">
-            <button
-              onClick={confirmReservation}
-              className="bg-green-600 text-white px-4 py-2 rounded"
-            >
-              Confirm Purchase
-            </button>
-
-            <button
-              onClick={cancelReservation}
-              className="bg-red-600 text-white px-4 py-2 rounded"
-            >
-              Cancel
-            </button>
-          </div>
-        )}
+              <button
+                onClick={cancelReservation}
+                className="flex-1 bg-red-600 text-white py-3 rounded-lg font-semibold shadow hover:bg-red-700 transition"
+              >
+                Cancel Reservation
+              </button>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </main>
   )
 }

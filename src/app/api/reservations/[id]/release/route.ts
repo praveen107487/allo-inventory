@@ -1,70 +1,87 @@
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 
-type Params = {
-  params: Promise<{
-    id: string
-  }>
-}
-
 export async function POST(
-  req: Request,
-  { params }: Params
+  request: Request,
+  context: {
+    params: Promise<{
+      id: string
+    }>
+  }
 ) {
-  const { id } = await params
+  try {
+    const params = await context.params
 
-  const reservation = await prisma.reservation.findUnique({
-    where: {
-      id
-    }
-  })
-
-  if (!reservation) {
-    return NextResponse.json(
-      {
-        message: "Reservation not found"
-      },
-      {
-        status: 404
-      }
-    )
-  }
-
-  if (reservation.status !== "pending") {
-    return NextResponse.json(
-      {
-        message: "Reservation already processed"
-      },
-      {
-        status: 400
-      }
-    )
-  }
-
-  await prisma.$transaction(async (tx) => {
-    await tx.inventory.updateMany({
-      where: {
-        productId: reservation.productId,
-        warehouseId: reservation.warehouseId
-      },
-      data: {
-        reservedStock: {
-          decrement: reservation.quantity
+    const reservation =
+      await prisma.reservation.findUnique({
+        where: {
+          id: params.id
         }
-      }
+      })
+
+    if (!reservation) {
+      return NextResponse.json(
+        {
+          message: "Reservation not found"
+        },
+        {
+          status: 404
+        }
+      )
+    }
+
+    if (reservation.status !== "pending") {
+      return NextResponse.json(
+        {
+          message:
+            "Reservation already processed"
+        },
+        {
+          status: 400
+        }
+      )
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.inventory.updateMany({
+        where: {
+          productId:
+            reservation.productId,
+          warehouseId:
+            reservation.warehouseId
+        },
+        data: {
+          reservedStock: {
+            decrement:
+              reservation.quantity
+          }
+        }
+      })
+
+      await tx.reservation.update({
+        where: {
+          id: reservation.id
+        },
+        data: {
+          status: "released"
+        }
+      })
     })
 
-    await tx.reservation.update({
-      where: {
-        id
+    return NextResponse.json({
+      message: "Reservation released"
+    })
+  } catch (error) {
+    console.log(error)
+
+    return NextResponse.json(
+      {
+        message:
+          "Failed to release reservation"
       },
-      data: {
-        status: "released"
+      {
+        status: 500
       }
-    })
-  })
-
-  return NextResponse.json({
-    message: "Reservation released"
-  })
+    )
+  }
 }
