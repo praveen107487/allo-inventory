@@ -1,23 +1,22 @@
+````md
 # Allo Inventory Reservation System
 
-A simple inventory reservation system built using Next.js, Prisma, Supabase PostgreSQL and Tailwind CSS.
+A simple inventory reservation system built with Next.js, Prisma, Supabase PostgreSQL, and Tailwind CSS.
 
 ## Features
 
-- Product listing
-- Warehouse inventory tracking
-- Reserve stock
-- Confirm reservation
-- Cancel reservation
-- Reservation expiry
-- Concurrency-safe reservation logic
-- Live countdown timer
+- View products
+- Track warehouse stock
+- Reserve products
+- Confirm or cancel reservations
+- Auto-expire reservations after 10 minutes
+- Safe concurrent reservations using database transactions
 
 ---
 
 ## Tech Stack
 
-- Next.js App Router
+- Next.js
 - TypeScript
 - Prisma
 - Supabase PostgreSQL
@@ -25,55 +24,40 @@ A simple inventory reservation system built using Next.js, Prisma, Supabase Post
 
 ---
 
-## Setup Instructions
+## Setup
 
-## 1. Clone Repository
+### 1. Clone the Repository
 
 ```bash
 git clone YOUR_GITHUB_REPO_URL
-```
+````
 
-## 2. Install Packages
+### 2. Install Dependencies
 
 ```bash
 npm install
 ```
 
-## 3. Setup Environment Variables
-
-Create `.env`
+### 3. Create `.env`
 
 ```env
 DATABASE_URL="YOUR_DATABASE_URL"
 ```
 
----
-
-## 4. Push Prisma Schema
+### 4. Setup Database
 
 ```bash
 npx prisma db push
-```
-
----
-
-## 5. Generate Prisma Client
-
-```bash
 npx prisma generate
 ```
 
----
-
-## 6. Seed Database
+### 5. Seed Sample Data
 
 ```bash
 npx tsx prisma/seed.ts
 ```
 
----
-
-## 7. Run Application
+### 6. Start the App
 
 ```bash
 npm run dev
@@ -87,44 +71,19 @@ http://localhost:3000
 
 ---
 
-# Reservation Flow
+## Reservation Process
 
 1. User reserves a product
-2. Stock becomes temporarily reserved
+2. Stock is temporarily locked
 3. Reservation expires after 10 minutes
-4. User can:
-   - confirm purchase
-   - cancel reservation
-5. Expired reservations are released automatically
+4. User can confirm or cancel the reservation
+5. Expired reservations are automatically released
 
 ---
 
-# Concurrency Handling
+## Deployment
 
-The reservation endpoint uses Prisma database transactions.
+* Frontend deployed on Vercel
+* Database hosted on Supabase PostgreSQL
 
-Inventory checking and reserved stock updates happen inside the same transaction to prevent race conditions when multiple users try reserving the same product simultaneously.
-
----
-
-# Expiry Handling
-
-Lazy cleanup approach is used.
-
-Whenever products are fetched, expired pending reservations are automatically released and stock becomes available again.
-
----
-
-# Trade-offs
-
-- Redis locking was not used to keep the implementation simpler
-- Lazy cleanup was chosen instead of cron jobs
-- UI was kept minimal to focus more on backend correctness
-
----
-
-# Deployment
-
-Frontend deployed on Vercel.
-
-Database hosted on Supabase PostgreSQL.
+```
